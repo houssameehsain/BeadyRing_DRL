@@ -1,2 +1,2 @@
 # BeadyRing_DRL
-Modeling of urban form using the 'Beady Ring' model (Hillier &amp; Hanson, 1984) and deep reinforcement learning. 
+Modeling of urban form based on the 'Beady Ring' model (Hillier & Hanson, 1984) using deep reinforcement learning. 
