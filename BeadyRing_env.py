@@ -86,7 +86,7 @@ class BeadyRing_env:
                 reward += 1
         elif _cell_state == 0:
             # density metric
-            reward += 1/self._max_row_len
+            reward += 1/(self._max_row_len**2)
             if adj_street_count == 0:
                 reward -= 1
             elif adj_street_count >= 3:
