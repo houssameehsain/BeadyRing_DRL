@@ -11,7 +11,7 @@ class BeadyRing_env:
         self._house_color = 0
         self._street_color = 1
         self._cell_size = 3
-        self._max_row_len = 31
+        self._max_row_len = 21
         self._obs_size = 9
         self._3d = False
         self.pad = int(floor(self._obs_size/2))
@@ -85,6 +85,8 @@ class BeadyRing_env:
             elif 0 < adj_street_count < 3:
                 reward += 1
         elif _cell_state == 0:
+            # density metric
+            reward += 1/self._max_row_len
             if adj_street_count == 0:
                 reward -= 1
             elif adj_street_count >= 3:
