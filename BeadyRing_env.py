@@ -7,9 +7,9 @@ import ghpythonlib.treehelpers as th
 
 class BeadyRing_env:
     def __init__(self):
-        self._carrier_color = 0.5
+        self._carrier_color = 127.5
         self._house_color = 0
-        self._street_color = 1
+        self._street_color = 255
         self._cell_size = 3
         self._max_row_len = 21
         self._obs_size = 9
@@ -52,7 +52,7 @@ class BeadyRing_env:
         self.adj_cells = [[[self.x, self.y], [self.R, self.C]]]
         
         # initial state
-        self.state = [[255*self._carrier_color for _ in range(int(self.max_world_row_len))] 
+        self.state = [[self._carrier_color for _ in range(int(self.max_world_row_len))] 
                         for _ in range(int(self.max_world_row_len))]
         
         # initial observation
@@ -120,7 +120,7 @@ class BeadyRing_env:
 
     def reset(self):
         # initial state
-        self.state = [[255*self._carrier_color for _ in range(int(self.max_world_row_len))] 
+        self.state = [[self._carrier_color for _ in range(int(self.max_world_row_len))] 
                         for _ in range(int(self.max_world_row_len))]
         
         # reset step counter
@@ -168,12 +168,13 @@ class BeadyRing_env:
         for i in range(left_up_R, right_bottom_R + 1):
             obs_row = []
             for j in range(left_up_C, right_bottom_C + 1):
-                item = self.state[i][j]/255
+                item = self.state[i][j]
                 obs_row.append(item)
             obs_.append(obs_row)
         return obs_
 
     def get_adjacent(self):
+        # von Neumann neighbourhood
         adjacent = []
         if self.x < len(self.RC_space) - 1:
             adjacent.append([[self.x+1, self.y], self.RC_space[self.x+1][self.y]])
@@ -190,7 +191,7 @@ class BeadyRing_env:
         house_cells_ = []
         for i in range(self.max_world_row_len):
             for j in range(self.max_world_row_len):
-                if self.state[i][j]/255 == 0:
+                if self.state[i][j] == 0:
                     house_cells_.append(self.grid_world[i][j])
         return house_cells_
 
@@ -204,7 +205,7 @@ if reset:
     done = False
     info = {
     "action_space": "gym.spaces.Discrete(2)",
-    "observation_space": "gym.spaces.Box(low=0, high=1, shape=({n},{n}))".format(n=sc.sticky['env']._obs_size)
+    "observation_space": "gym.spaces.Box(low=0, high=255, shape=(1, {n}, {n}), dtype=np.uint8)".format(n=sc.sticky['env']._obs_size)
     }
     
 elif action is not None:
