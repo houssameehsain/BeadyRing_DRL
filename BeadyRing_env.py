@@ -203,10 +203,7 @@ if reset:
     observation = sc.sticky['env'].reset()
     reward = None
     done = False
-    info = {
-    "action_space": "gym.spaces.Discrete(2)",
-    "observation_space": "gym.spaces.Box(low=0, high=255, shape=(1, {n}, {n}), dtype=np.uint8)".format(n=sc.sticky['env']._obs_size)
-    }
+    info = {}
     
 elif action is not None:
     observation, reward, done, info = sc.sticky['env'].step(action)
@@ -227,6 +224,7 @@ sc.sticky["observation"] = observation
 sc.sticky["reward"] = reward
 sc.sticky["done"] = done
 sc.sticky["info"] = info
+
 
 
 
