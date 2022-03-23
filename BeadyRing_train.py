@@ -2,8 +2,14 @@ import socket
 import struct
 import pickle
 import numpy as np
+from math import floor
 import gym
-from stable_baselines3 import A2C, PPO, DQN
+from stable_baselines3 import PPO, DQN
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
+from stable_baselines3.common.env_checker import check_env
+import wandb
+from wandb.integration.sb3 import WandbCallback
 
 
 class Connection:
@@ -30,8 +36,12 @@ class Connection:
         self._socket.send(msg)
 
 class Env(gym.Env):
-    def __init__(self, addr):
+    metadata = {'render.modes': ['rgb_array']}
+
+    def __init__(self):
+        super(Env, self).__init__()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        addr = ("127.0.0.1", 50710)
         s.bind(addr)
         s.listen(1)
         clientsocket, address = s.accept()
@@ -39,36 +49,72 @@ class Env(gym.Env):
         self._socket = clientsocket
         self._conn = Connection(clientsocket)
 
-        self.action_space = None
-        self.observation_space = None
+        self.grid_len = 21 # Make sure grid size matches max_row_len in the Gh env
+        self.obs_size = 9 # Make sure observation size matches the one in the Gh env
+        self.pad = int(floor(self.obs_size/2))
+        self.action_space = gym.spaces.Discrete(2)
+        self.observation_space = gym.spaces.Box(low=0, high=255, 
+                                                shape=(self.obs_size, self.obs_size)) 
 
     def reset(self):
         self._conn.send_object("reset")
         msg = self._conn.receive_object()
-        self.action_space = eval(msg["info"]["action_space"])
-        self.observation_space = eval(msg["info"]["observation_space"])
-        return msg["observation"]
+
+        return np.asarray(msg["observation"])
 
     def step(self, action):
-        self._conn.send_object(action.tolist())
+        self._conn.send_object(action.item())
         msg = self._conn.receive_object()
-        obs = msg["observation"]
+        obs = np.asarray(msg["observation"])
         rwd = msg["reward"]
         done = msg["done"]
         info = msg["info"]
         return obs, rwd, done, info
 
+    def render(self, mode='rgb_array'):
+        msg = self._conn.receive_object()
+        if mode == 'rgb_array':
+            img = np.asarray(msg["state"])
+            img = img[self.pad:self.grid_len+self.pad, self.pad:self.grid_len+self.pad]
+            return img.reshape(1, self.grid_len, self.grid_len)
+
     def close(self):
         self._conn.send_object("close")
         self._socket.close()
 
+# Log in to W&B account
+print('Wandb login ...')
+wandb.login(key='') # place wandb key here!
 
-addr = ("127.0.0.1", 50710)
-env = Env(addr)
-env.reset()
+config = {
+    "policy_type": "MlpPolicy",
+    "total_timesteps": 1000000
+}
 
-model = DQN('MlpPolicy', env, verbose=1, device='cuda')
-model.learn(total_timesteps=500000, log_interval=1)
+run = wandb.init(
+    entity='', #Replace with your wandb entity & project
+    project="BeadyRing_DRL",
+    config=config,
+    sync_tensorboard=True  # auto-upload sb3's tensorboard metrics
+)
+
+print('\n   Reset and Loop HoopSnake Gh component ... \n')
+
+def make_env():
+    env = Env()
+    # debug
+    # check_env(env) # check if the env follows the gym interface
+    env.reset()
+    env = Monitor(env)  # record stats such as returns
+    return env
+
+env = DummyVecEnv([make_env])
+# env = VecVideoRecorder(env, f"videos/{run.id}", record_video_trigger=lambda x: x % 4410 == 0, 
+#                          video_length=441) #21*21*10 = 4410 | 21 is self._max_row_len in Gh env
+
+model = DQN(config["policy_type"], env, verbose=1, tensorboard_log=f"runs/{run.id}", device='cuda')
+model.learn(total_timesteps=config["total_timesteps"], log_interval=10, 
+            callback=WandbCallback(model_save_path=f'models/{run.id}', model_save_freq=100))
 
 cum_rwd = 0
 obs = env.reset()
@@ -81,4 +127,8 @@ for i in range(300):
         print("Return = ", cum_rwd)
         cum_rwd = 0
 env.close()
+
+run.finish()
+
+
 
