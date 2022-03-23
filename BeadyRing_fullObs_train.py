@@ -81,7 +81,7 @@ class Env(gym.Env):
 
 # Log in to W&B account
 print('Wandb login ...')
-wandb.login(key='a62c193ea97080a59a7f646248cd9ec23346c61c') # place wandb key here!
+wandb.login(key='') # place wandb key here!
 
 config = {
     "policy_type": "CnnPolicy",
@@ -89,7 +89,7 @@ config = {
 }
 
 run = wandb.init(
-    entity='hehsain', #Replace with your wandb entity & project
+    entity='', #Replace with your wandb entity & project
     project="BeadyRing_DRL",
     config=config,
     sync_tensorboard=True  # auto-upload sb3's tensorboard metrics
