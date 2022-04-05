@@ -32,7 +32,7 @@ The cells could be in one of 3 different states at a time:
 - A street cell (white)
 
 ## Observation
-The agent gets a local observation in the form of an array with the states of the cells under the green area (adjustable observation reach), or gets the full state of the environment as an image showing the states of all cells.
+The agent gets a local observation in the form of an array with the states of the cells under the green area surrounding the current action cell (adjustable observation reach), or gets the full state of the environment as an image showing the states of all cells in a full observation version of the environment.
 <p align="center">
   <img src="images/train_sample_img.png" height="500"/>
 </p>
